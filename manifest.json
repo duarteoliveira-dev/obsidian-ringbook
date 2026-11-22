@@ -2,7 +2,7 @@
 	"id": "ringbook",
 	"name": "Ringbook",
 	"version": "1.0.0",
-	"minAppVersion": "1.8.7",
+	"minAppVersion": "1.13.0",
 	"description": "Browse your vault like a ring binder with OneNote-style navigation: notebooks and color-coded section tabs on the left, the notes of the selected section next to them.",
 	"author": "Duarte Caldas Oliveira",
 	"isDesktopOnly": false
