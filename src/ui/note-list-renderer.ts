@@ -3,7 +3,7 @@ import { NO_SECTION } from '../types';
 import type { ExplorerHost } from '../types';
 import { sortItems } from '../utils/order-store';
 import { getFolder, getNotes, notesOrderKey } from '../utils/vault-tree';
-import { showNoteMenu } from './context-menu';
+import { showNoteMenu, showNotesAreaMenu } from './context-menu';
 import { attachDropTarget, makeDraggable } from './drag-drop';
 
 export class NoteListRenderer {
@@ -42,6 +42,11 @@ export class NoteListRenderer {
 		});
 		setIcon(add, 'plus');
 		add.addEventListener('click', () => actions.newNote(notebook, sectionPath));
+		list.addEventListener('contextmenu', (evt) => {
+			if (evt.target instanceof Element && evt.target.closest('.onb-row')) return;
+			evt.preventDefault();
+			showNotesAreaMenu(this.host, notebook, sectionPath, evt);
+		});
 
 		const { settings, order } = pluginData;
 		const key = notesOrderKey(notebook, sectionPath);
@@ -65,8 +70,11 @@ export class NoteListRenderer {
 			row.toggleClass('is-selected', note.path === activePath);
 			row.createSpan({
 				cls: 'onb-row-title',
-				text: note.extension === 'md' ? note.basename : note.name,
+				text: note.basename,
 			});
+			if (note.extension !== 'md') {
+				row.createSpan({ cls: 'onb-note-tag', text: note.extension });
+			}
 
 			row.addEventListener('click', (evt) => {
 				void app.workspace.getLeaf(Keymap.isModEvent(evt)).openFile(note);

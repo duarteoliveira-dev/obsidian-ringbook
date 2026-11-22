@@ -19,6 +19,10 @@ export function getSections(notebook: TFolder): TFolder[] {
 	return notebook.children.filter((c) => c instanceof TFolder);
 }
 
+export function subsectionsOrderKey(section: TFolder): string {
+	return `${section.path}/__subsections__`;
+}
+
 export function getLooseFiles(notebook: TFolder): TFile[] {
 	return notebook.children.filter((c) => c instanceof TFile);
 }

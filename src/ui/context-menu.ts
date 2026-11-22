@@ -1,7 +1,7 @@
 import { Menu, TFile, TFolder } from 'obsidian';
 import { NO_SECTION } from '../types';
 import type { ExplorerHost } from '../types';
-import { getNotebooks, getSections } from '../utils/vault-tree';
+import { getFolder, getNotebooks, getSections } from '../utils/vault-tree';
 
 export function showNotebookMenu(host: ExplorerHost, notebook: TFolder, evt: MouseEvent): void {
 	const menu = new Menu();
@@ -24,26 +24,47 @@ export function showSectionMenu(
 	section: TFolder,
 	evt: MouseEvent,
 ): void {
+	const { actions, app } = host;
 	const menu = new Menu();
 	menu.addItem((i) =>
-		i.setTitle('New note').setIcon('file-plus').onClick(() => host.actions.newNote(notebook, section.path)),
+		i
+			.setSection('action-primary')
+			.setTitle('New note')
+			.setIcon('lucide-edit')
+			.onClick(() => void actions.newUntitledNote(notebook, section)),
 	);
-	menu.addSeparator();
-	menu.addItem((i) =>
-		i.setTitle('Rename').setIcon('pencil').onClick(() => host.actions.rename(section)),
-	);
-	for (const target of getNotebooks(host.app.vault)) {
-		if (target === section.parent) continue;
+	if (section.parent === notebook) {
 		menu.addItem((i) =>
 			i
-				.setTitle(`Move to notebook: ${target.name}`)
-				.setIcon('folder-input')
-				.onClick(() => void host.actions.moveInto(section, target)),
+				.setSection('action-primary')
+				.setTitle('New folder')
+				.setIcon('lucide-folder')
+				.onClick(() => actions.newSection(notebook, section)),
 		);
 	}
 	menu.addItem((i) =>
-		i.setTitle('Delete').setIcon('trash').onClick(() => host.actions.remove(section)),
+		i
+			.setSection('danger')
+			.setTitle('Rename...')
+			.setIcon('lucide-edit-3')
+			.onClick(() => actions.rename(section)),
 	);
+	menu.addItem((i) =>
+		i
+			.setSection('action')
+			.setTitle('Make a copy')
+			.setIcon('lucide-files')
+			.onClick(() => void actions.copy(section)),
+	);
+	menu.addItem((i) =>
+		i
+			.setSection('danger')
+			.setTitle('Delete')
+			.setIcon('lucide-trash-2')
+			.setWarning(true)
+			.onClick(() => void app.fileManager.promptForDeletion(section)),
+	);
+	app.workspace.trigger('file-menu', menu, section, 'file-explorer-context-menu');
 	menu.showAtMouseEvent(evt);
 }
 
@@ -52,6 +73,25 @@ export function showNoSectionMenu(host: ExplorerHost, notebook: TFolder, evt: Mo
 	menu.addItem((i) =>
 		i.setTitle('New note').setIcon('file-plus').onClick(() => host.actions.newNote(notebook, NO_SECTION)),
 	);
+	menu.showAtMouseEvent(evt);
+}
+
+export function showNotesAreaMenu(
+	host: ExplorerHost,
+	notebook: TFolder,
+	sectionPath: string,
+	evt: MouseEvent,
+): void {
+	const menu = new Menu();
+	menu.addItem((i) =>
+		i
+			.setSection('action-primary')
+			.setTitle('New note')
+			.setIcon('lucide-edit')
+			.onClick(() => host.actions.newNote(notebook, sectionPath)),
+	);
+	const folder = sectionPath === NO_SECTION ? notebook : getFolder(host.app.vault, sectionPath);
+	if (folder) host.app.workspace.trigger('file-menu', menu, folder, 'file-explorer-context-menu');
 	menu.showAtMouseEvent(evt);
 }
 

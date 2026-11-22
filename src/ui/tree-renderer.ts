@@ -1,9 +1,10 @@
 import { setIcon, TFolder } from 'obsidian';
 import { NO_SECTION } from '../types';
 import type { DragPayload, ExplorerHost } from '../types';
-import { ROOT_ORDER_KEY } from '../utils/constants';
+import { colorForIndex } from '../utils/colors';
+import { NOTEBOOK_ICON, ROOT_ORDER_KEY } from '../utils/constants';
 import { sortItems } from '../utils/order-store';
-import { getLooseFiles, getNotebooks, getSections } from '../utils/vault-tree';
+import { getLooseFiles, getNotebooks, getSections, subsectionsOrderKey } from '../utils/vault-tree';
 import { showNoSectionMenu, showNotebookMenu, showSectionMenu } from './context-menu';
 import { attachDropTarget, makeDraggable } from './drag-drop';
 
@@ -45,6 +46,15 @@ export class TreeRenderer {
 
 		const chevron = row.createSpan({ cls: 'onb-chevron' });
 		setIcon(chevron, isExpanded ? 'chevron-down' : 'chevron-right');
+		const icon = row.createSpan({ cls: 'onb-notebook-icon' });
+		const { settings } = this.host.pluginData;
+		if (settings.colorNotebookIcons) {
+			icon.style.setProperty(
+				'--onb-icon-color',
+				colorForIndex(settings.firstNotebookColor, notebooks.indexOf(notebook)),
+			);
+		}
+		setIcon(icon, NOTEBOOK_ICON);
 		row.createSpan({ cls: 'onb-row-title', text: notebook.name });
 		const add = row.createSpan({
 			cls: 'onb-row-action clickable-icon',
@@ -67,10 +77,21 @@ export class TreeRenderer {
 			onDrop: (payload, zone) => this.dropOnNotebook(payload, zone, notebook, notebooks),
 		});
 
-		if (!isExpanded) return;
+		const isClosing = !isExpanded && this.host.closing.has(notebook.path);
+		if (!isExpanded && !isClosing) return;
 		const sections = sortItems(getSections(notebook), notebook.path, this.host.pluginData.order);
-		if (getLooseFiles(notebook).length > 0) this.renderNoSection(list, notebook);
-		for (const section of sections) this.renderSection(list, notebook, section, sections);
+		const wrapper = list.createDiv({
+			cls: 'onb-sections',
+			attr: { 'data-path': notebook.path },
+		});
+		wrapper.toggleClass('is-opening', this.host.justOpened === notebook.path);
+		wrapper.toggleClass('is-closing', isClosing);
+		const inner = wrapper.createDiv({ cls: 'onb-sections-inner' });
+		if (getLooseFiles(notebook).length > 0) this.renderNoSection(inner, notebook);
+		sections.forEach((section, index) => {
+			const color = colorForIndex(this.host.pluginData.settings.firstSectionColor, index);
+			this.renderSection(inner, notebook, section, sections, color);
+		});
 	}
 
 	private renderNoSection(list: HTMLElement, notebook: TFolder): void {
@@ -100,12 +121,15 @@ export class TreeRenderer {
 		notebook: TFolder,
 		section: TFolder,
 		sections: TFolder[],
+		color: string,
+		parentSection: TFolder | null = null,
 	): void {
 		const { selection } = this.host;
 		const row = list.createDiv({
-			cls: 'onb-row onb-section',
+			cls: parentSection ? 'onb-row onb-section onb-subsection' : 'onb-row onb-section',
 			attr: { title: section.path },
 		});
+		row.style.setProperty('--onb-chip', color);
 		row.toggleClass('is-selected', selection.sectionPath === section.path);
 		row.createSpan({ cls: 'onb-row-title', text: section.name });
 
@@ -118,11 +142,17 @@ export class TreeRenderer {
 		attachDropTarget(row, {
 			mode: (p) => {
 				if (p.type === 'note') return 'into';
-				if (p.type === 'section' && p.path !== section.path) return 'reorder';
-				return null;
+				if (p.type !== 'section' || p.path === section.path) return null;
+				if (parentSection && !sections.some((s) => s.path === p.path)) return null;
+				return 'reorder';
 			},
-			onDrop: (payload, zone) => this.dropOnSection(payload, zone, notebook, section, sections),
+			onDrop: (payload, zone) =>
+				this.dropOnSection(payload, zone, notebook, section, sections, parentSection),
 		});
+
+		if (parentSection) return;
+		const subs = sortItems(getSections(section), subsectionsOrderKey(section), this.host.pluginData.order);
+		for (const sub of subs) this.renderSection(list, notebook, sub, subs, color, section);
 	}
 
 	private async dropOnNotebook(
@@ -156,6 +186,7 @@ export class TreeRenderer {
 		notebook: TFolder,
 		section: TFolder,
 		sections: TFolder[],
+		parentSection: TFolder | null,
 	): Promise<void> {
 		const { app, actions } = this.host;
 		const moved = app.vault.getAbstractFileByPath(payload.path);
@@ -170,8 +201,8 @@ export class TreeRenderer {
 			target: section,
 			zone,
 			siblings: sections,
-			key: notebook.path,
-			moveTo: moved.parent === notebook ? null : notebook,
+			key: parentSection ? subsectionsOrderKey(parentSection) : notebook.path,
+			moveTo: moved.parent === (parentSection ?? notebook) ? null : (parentSection ?? notebook),
 		});
 	}
 }

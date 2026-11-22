@@ -55,14 +55,15 @@ export class FileActions {
 		});
 	}
 
-	newSection(notebook: Notebook): void {
+	newSection(notebook: Notebook, parent: TFolder = notebook): void {
+		const isSub = parent !== notebook;
 		this.promptName({
-			title: 'New section',
-			placeholder: 'Section name',
+			title: isSub ? 'New folder' : 'New section',
+			placeholder: isSub ? 'Folder name' : 'Section name',
 			submitLabel: 'Create',
-			parent: notebook,
+			parent,
 			onSubmit: async (name) => {
-				const folder = await this.app.vault.createFolder(joinPath(notebook.path, name));
+				const folder = await this.app.vault.createFolder(joinPath(parent.path, name));
 				this.host.selectSection(notebook, folder);
 			},
 		});
@@ -84,6 +85,28 @@ export class FileActions {
 				await this.app.workspace.getLeaf(false).openFile(file);
 			},
 		});
+	}
+
+	private availablePath(parent: TFolder, base: string, ext = ''): string {
+		const taken = (name: string) =>
+			parent.children.some((c) => c.name.toLowerCase() === `${name}${ext}`.toLowerCase());
+		let name = base;
+		for (let n = 1; taken(name); n++) name = `${base} ${n}`;
+		return joinPath(parent.path, `${name}${ext}`);
+	}
+
+	async newUntitledNote(notebook: Notebook, section: TFolder): Promise<void> {
+		const file = await this.app.vault.create(this.availablePath(section, 'Untitled', '.md'), '');
+		this.host.selectSection(notebook, section);
+		await this.app.workspace.getLeaf(false).openFile(file);
+	}
+
+	async copy(file: TAbstractFile): Promise<void> {
+		const parent = file.parent;
+		if (!parent) return;
+		const ext = file instanceof TFile && file.extension ? `.${file.extension}` : '';
+		const base = file instanceof TFile ? file.basename : file.name;
+		await this.app.vault.copy(file, this.availablePath(parent, base, ext));
 	}
 
 	rename(file: TAbstractFile): void {

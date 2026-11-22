@@ -3,7 +3,7 @@ import { revealNotebookExplorer } from './commands/reveal-view';
 import {
 	DEFAULT_DATA,
 	DEFAULT_SETTINGS,
-	OnenoteNotebookSettingTab,
+	RingbookSettingTab,
 } from './settings';
 import type { PluginData } from './types';
 import { NotebookExplorerView } from './ui/notebook-explorer-view';
@@ -12,12 +12,14 @@ import {
 	RIBBON_ICON,
 	VIEW_TYPE_NOTEBOOK_EXPLORER,
 } from './utils/constants';
+import { registerIcons } from './utils/icons';
 import { registerOrderMigration } from './utils/order-store';
 
-export default class OnenoteNotebookPlugin extends Plugin {
+export default class RingbookPlugin extends Plugin {
 	pluginData!: PluginData;
 
 	async onload() {
+		registerIcons();
 		await this.loadPluginData();
 
 		this.registerView(
@@ -34,15 +36,20 @@ export default class OnenoteNotebookPlugin extends Plugin {
 			name: 'Open notebook explorer',
 			callback: () => void revealNotebookExplorer(this),
 		});
-		this.addSettingTab(new OnenoteNotebookSettingTab(this.app, this));
+		this.addSettingTab(new RingbookSettingTab(this.app, this));
 	}
 
 	async loadPluginData() {
 		const saved = (await this.loadData()) as Partial<PluginData> | null;
+		const savedSettings = saved?.settings;
+		const inheritedNotebookColor =
+			savedSettings?.firstSectionColor && !savedSettings.firstNotebookColor
+				? { firstNotebookColor: savedSettings.firstSectionColor }
+				: {};
 		this.pluginData = {
 			...DEFAULT_DATA,
 			...saved,
-			settings: { ...DEFAULT_SETTINGS, ...saved?.settings },
+			settings: { ...DEFAULT_SETTINGS, ...inheritedNotebookColor, ...savedSettings },
 			order: saved?.order ?? {},
 		};
 	}

@@ -13,6 +13,12 @@ export async function revealNotebookExplorer(plugin: Plugin): Promise<void> {
 	await workspace.revealLeaf(leaf);
 }
 
+export function revealActiveNoteInViews(app: App): void {
+	for (const leaf of app.workspace.getLeavesOfType(VIEW_TYPE_NOTEBOOK_EXPLORER)) {
+		if (leaf.view instanceof NotebookExplorerView) leaf.view.revealActiveNote();
+	}
+}
+
 export function refreshExplorerViews(app: App): void {
 	for (const leaf of app.workspace.getLeavesOfType(VIEW_TYPE_NOTEBOOK_EXPLORER)) {
 		if (leaf.view instanceof NotebookExplorerView) leaf.view.refresh();

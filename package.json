@@ -1,7 +1,7 @@
 {
-	"name": "onenote-notebook",
+	"name": "ringbook",
 	"version": "1.0.0",
-	"description": "OneNote-style two-panel notebook navigator for Obsidian",
+	"description": "Two-panel notebook and section navigator for Obsidian",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
