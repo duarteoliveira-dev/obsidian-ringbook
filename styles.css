@@ -1,0 +1,137 @@
+.onb-container {
+	display: flex;
+	flex-direction: row;
+	height: 100%;
+	padding: 0;
+	overflow: hidden;
+}
+
+.onb-tree-col,
+.onb-notes-col {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.onb-tree-col {
+	flex: 0 0 45%;
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.onb-notes-col {
+	flex: 1 1 0;
+}
+
+.onb-col-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+}
+
+.onb-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: var(--size-4-1);
+}
+
+.onb-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	padding: var(--size-2-2) var(--size-4-2);
+	border-radius: var(--radius-s);
+	color: var(--text-normal);
+	cursor: pointer;
+	position: relative;
+}
+
+.onb-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.onb-row.is-selected {
+	background-color: var(--background-modifier-active-hover);
+	font-weight: var(--font-semibold);
+}
+
+.onb-row.onb-section {
+	padding-left: calc(var(--size-4-2) + var(--size-4-6));
+}
+
+.onb-no-section .onb-row-title {
+	font-style: italic;
+	color: var(--text-muted);
+}
+
+.onb-row-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.onb-chevron {
+	display: flex;
+	color: var(--text-faint);
+}
+
+.onb-row-action {
+	opacity: 0;
+}
+
+.onb-row:hover .onb-row-action {
+	opacity: 1;
+}
+
+.onb-empty {
+	padding: var(--size-4-3);
+	color: var(--text-faint);
+	font-size: var(--font-ui-small);
+}
+
+.onb-row.is-dragging {
+	opacity: 0.4;
+}
+
+.onb-row.is-drop-before::before,
+.onb-row.is-drop-after::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background-color: var(--interactive-accent);
+}
+
+.onb-row.is-drop-before::before {
+	top: -1px;
+}
+
+.onb-row.is-drop-after::after {
+	bottom: -1px;
+}
+
+.onb-row.is-drop-into {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.onb-prompt-input {
+	width: 100%;
+	margin-bottom: var(--size-4-2);
+}
+
+.onb-prompt-error {
+	min-height: 1.2em;
+	margin-bottom: var(--size-4-2);
+	color: var(--text-error);
+	font-size: var(--font-ui-small);
+}

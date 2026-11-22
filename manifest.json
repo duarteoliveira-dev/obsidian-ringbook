@@ -1,0 +1,9 @@
+{
+	"id": "onenote-notebook",
+	"name": "Onenote Notebook",
+	"version": "1.0.0",
+	"minAppVersion": "1.7.2",
+	"description": "Browse your vault like OneNote: notebooks and sections on the left, the notes of the selected section next to them.",
+	"author": "Duarte Caldas Oliveira",
+	"isDesktopOnly": false
+}
