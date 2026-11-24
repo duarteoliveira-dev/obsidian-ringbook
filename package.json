@@ -1,6 +1,6 @@
 {
 	"name": "ringbook",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Two-panel notebook and section navigator for Obsidian",
 	"main": "main.js",
 	"type": "module",

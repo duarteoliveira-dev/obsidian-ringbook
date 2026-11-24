@@ -217,6 +217,10 @@ When on, opening a note (from anywhere: a link, quick switcher, another file exp
 
 When on, expanding a notebook collapses all the others, so only one notebook is open at a time. Default: off.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) or the [releases page](https://github.com/duarteoliveira-dev/obsidian-ringbook/releases).
+
 ## Compatibility
 
 Ringbook does not support the [Iconize](https://github.com/FlorianWoelki/obsidian-iconize) plugin. Iconize is deprecated and no longer maintained by its author, so icons you set with it are not shown in Ringbook, which always uses its own notebook icon and section markers.
