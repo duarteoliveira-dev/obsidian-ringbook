@@ -229,14 +229,6 @@ Ringbook does not support the [Iconize](https://github.com/FlorianWoelki/obsidia
 
 Ringbook works fully offline and makes no network requests. It stores its settings, manual ordering, last selection, closed notebooks and panel sizes in `<Vault>/.obsidian/plugins/ringbook/data.json`. It only reads and changes files inside your vault, and only when you ask it to (create, rename, copy, move or delete).
 
-## Development
-
-- Requires Node.js 18 or newer.
-- `npm install` to install dependencies.
-- `npm run dev` to build in watch mode.
-- `npm run build` for a production build.
-- `npm run lint` to run ESLint.
-
-### Manual install
+## Manual installation
 
 Copy `main.js`, `manifest.json` and `styles.css` to `<Vault>/.obsidian/plugins/ringbook/`, reload Obsidian and enable the plugin in **Settings → Community plugins**.
