@@ -231,4 +231,4 @@ Ringbook works fully offline and makes no network requests. It stores its settin
 
 ## Manual installation
 
-Copy `main.js`, `manifest.json` and `styles.css` to `<Vault>/.obsidian/plugins/ringbook/`, reload Obsidian and enable the plugin in **Settings → Community plugins**.
+Download `main.js`, `manifest.json` and `styles.css` from the latest release on the [releases page](https://github.com/duarteoliveira-dev/obsidian-ringbook/releases). These files are attached to each release and are not part of the source code in the repository. Copy them to `<Vault>/.obsidian/plugins/ringbook/`, reload Obsidian and enable the plugin in **Settings → Community plugins**.
