@@ -1,12 +1,12 @@
 import { ItemView, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { NO_SECTION } from '../types';
-import type { ExplorerHost, Notebook, Selection, SectionRef } from '../types';
+import type { ExplorerHost, Notebook, Section, SectionRef, Selection } from '../types';
 import type RingbookPlugin from '../main';
 import { VIEW_TYPE_NOTEBOOK_EXPLORER, RIBBON_ICON } from '../utils/constants';
 import { FileActions } from '../utils/file-actions';
 import { remapPath, sortItems } from '../utils/order-store';
 import { createScheduler } from '../utils/refresh-scheduler';
-import { getFolder, getLooseFiles, getSections } from '../utils/vault-tree';
+import { getFolder, getLooseFiles, getNotebooks, getSections } from '../utils/vault-tree';
 import { NoteListRenderer } from './note-list-renderer';
 import { attachResizer } from './resize-handle';
 import { TreeRenderer } from './tree-renderer';
@@ -16,6 +16,8 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 	expanded = new Set<string>();
 	justOpened: string | null = null;
 	closing = new Set<string>();
+	collapsedSections = new Set<string>();
+	searchQuery = '';
 	private closingTimer: number | null = null;
 	actions: FileActions = new FileActions(this);
 	private tree!: TreeRenderer;
@@ -72,13 +74,15 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		contentEl.addClass('onb-container');
 		this.tree = new TreeRenderer(contentEl.createDiv({ cls: 'onb-tree-col' }), this);
 		const handle = contentEl.createDiv({ cls: 'onb-resizer' });
-		this.applyTreeWidth(this.pluginData.treeWidth);
+		this.applyLayout();
 		attachResizer(
 			handle,
 			contentEl,
-			(width) => this.applyTreeWidth(width),
-			(width) => {
-				this.pluginData.treeWidth = width;
+			() => this.isStacked(),
+			(size) => this.applyTreeSize(size),
+			(size) => {
+				if (this.isStacked()) this.pluginData.treeHeight = size;
+				else this.pluginData.treeWidth = size;
 				void this.persist();
 			},
 		);
@@ -141,6 +145,9 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 
 	selectSection(notebook: Notebook, section: SectionRef): void {
 		this.expand(notebook);
+		if (section !== NO_SECTION && section.parent && section.parent !== notebook) {
+			this.collapsedSections.delete(section.parent.path);
+		}
 		this.selection = {
 			notebookPath: notebook.path,
 			sectionPath: section === NO_SECTION ? NO_SECTION : section.path,
@@ -154,9 +161,14 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 	}
 
 	private revealNote(file: TFile): void {
+		const { focusPath } = this.pluginData;
+		if (focusPath && !file.path.startsWith(`${focusPath}/`)) {
+			this.schedule();
+			return;
+		}
 		const [notebookName, sectionName, ...rest] = file.path.split('/');
 		const notebook = getFolder(this.app.vault, notebookName ?? null);
-		if (!notebook || !sectionName) {
+		if (!notebook || !sectionName || this.pluginData.hiddenNotebooks.includes(notebook.path)) {
 			this.schedule();
 			return;
 		}
@@ -191,6 +203,89 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		}
 	}
 
+	setFocus(folder: TFolder): void {
+		const [notebookName, sectionName] = folder.path.split('/');
+		const notebook = getFolder(this.app.vault, notebookName ?? null);
+		if (!notebook || folder.path.split('/').length > 3) return;
+		this.pluginData.focusPath = folder.path;
+		if (sectionName) this.selectSection(notebook, folder);
+		else this.selectNotebook(notebook);
+	}
+
+	collapseAll(): void {
+		this.expanded.clear();
+		for (const notebook of getNotebooks(this.app.vault)) {
+			for (const section of getSections(notebook)) {
+				if (getSections(section).length > 0) this.collapsedSections.add(section.path);
+			}
+		}
+		this.render();
+	}
+
+	clearFocus(): void {
+		if (!this.pluginData.focusPath) return;
+		this.pluginData.focusPath = null;
+		void this.persist();
+		this.render();
+	}
+
+	toggleFocus(): void {
+		if (this.pluginData.focusPath) {
+			this.clearFocus();
+			return;
+		}
+		const { notebookPath, sectionPath } = this.selection;
+		const target = getFolder(
+			this.app.vault,
+			sectionPath && sectionPath !== NO_SECTION ? sectionPath : notebookPath,
+		);
+		if (target) this.setFocus(target);
+	}
+
+	private normalizeFocus(): void {
+		const path = this.pluginData.focusPath;
+		if (!path) return;
+		const folder = getFolder(this.app.vault, path);
+		const root = path.split('/')[0] ?? '';
+		if (!folder || path.split('/').length > 3 || this.pluginData.hiddenNotebooks.includes(root)) {
+			this.pluginData.focusPath = null;
+			void this.persist();
+		}
+	}
+
+	closeNotebook(notebook: Notebook): void {
+		const { hiddenNotebooks } = this.pluginData;
+		if (!hiddenNotebooks.includes(notebook.path)) hiddenNotebooks.push(notebook.path);
+		this.expanded.delete(notebook.path);
+		if (this.pluginData.focusPath === notebook.path) this.pluginData.focusPath = null;
+		void this.persist();
+		this.render();
+	}
+
+	reopenNotebook(notebook: Notebook): void {
+		const { pluginData } = this;
+		pluginData.hiddenNotebooks = pluginData.hiddenNotebooks.filter((p) => p !== notebook.path);
+		this.selectNotebook(notebook);
+	}
+
+	setSearchQuery(query: string): void {
+		this.searchQuery = query;
+		this.schedule();
+	}
+
+	toggleSection(notebook: Notebook, section: Section): void {
+		if (this.collapsedSections.has(section.path)) {
+			this.collapsedSections.delete(section.path);
+			this.justOpened = section.path;
+			this.selectSection(notebook, section);
+			return;
+		}
+		this.collapseWrapper('onb-subsections', section.path, () => {
+			this.collapsedSections.add(section.path);
+			this.selectSection(notebook, section);
+		});
+	}
+
 	private animateAutoClose(keep: Notebook): void {
 		if (activeWindow.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const others = [...this.expanded].filter((p) => p !== keep.path);
@@ -205,18 +300,22 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 	}
 
 	private collapse(notebook: Notebook): void {
-		const wrapper = Array.from(
-			this.contentEl.querySelectorAll<HTMLElement>('.onb-sections'),
-		).find((el) => el.dataset.path === notebook.path);
-		const finish = () => {
+		this.collapseWrapper('onb-sections', notebook.path, () => {
 			this.expanded.delete(notebook.path);
 			this.render();
-		};
+		});
+	}
+
+	private collapseWrapper(cls: string, path: string, finish: () => void): void {
+		const wrapper = Array.from(
+			this.contentEl.querySelectorAll<HTMLElement>(`.${cls}`),
+		).find((el) => el.dataset.onbPath === path);
 		if (!wrapper || activeWindow.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			finish();
 			return;
 		}
 		if (wrapper.hasClass('is-closing')) return;
+		wrapper.removeClass('is-opening');
 		wrapper.addClass('is-closing');
 		let done = false;
 		const once = () => {
@@ -224,7 +323,13 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 			done = true;
 			finish();
 		};
-		wrapper.addEventListener('animationend', once, { once: true });
+		wrapper.addEventListener(
+			'animationend',
+			(evt) => {
+				if (evt.target === wrapper) once();
+			},
+			{ once: false },
+		);
 		window.setTimeout(once, 300);
 	}
 
@@ -232,8 +337,23 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		await this.plugin.savePluginData();
 	}
 
-	private applyTreeWidth(width: number | null): void {
-		this.contentEl.setCssProps({ '--onb-tree-width': width ? `${width}px` : '45%' });
+	private isStacked(): boolean {
+		return this.pluginData.settings.panelLayout === 'stacked';
+	}
+
+	private applyTreeSize(size: number | null): void {
+		const prop = this.isStacked() ? '--onb-tree-height' : '--onb-tree-width';
+		this.contentEl.setCssProps({ [prop]: size ? `${size}px` : '50%' });
+	}
+
+	private applyLayout(): void {
+		const stacked = this.isStacked();
+		this.contentEl.toggleClass('is-stacked', stacked);
+		const { treeWidth, treeHeight } = this.pluginData;
+		this.contentEl.setCssProps({
+			'--onb-tree-width': treeWidth ? `${treeWidth}px` : '45%',
+			'--onb-tree-height': treeHeight ? `${treeHeight}px` : '50%',
+		});
 	}
 
 	private commitSelection(): void {
@@ -258,6 +378,11 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		}
 		this.selection = { notebookPath: nextNotebook, sectionPath: nextSection };
 		this.expanded = new Set([...this.expanded].map((p) => remapPath(p, oldPath, newPath)));
+		this.collapsedSections = new Set(
+			[...this.collapsedSections].map((p) => remapPath(p, oldPath, newPath)),
+		);
+		const { focusPath } = this.pluginData;
+		if (focusPath) this.pluginData.focusPath = remapPath(focusPath, oldPath, newPath);
 		this.pluginData.lastNotebookPath = nextNotebook;
 		this.pluginData.lastSectionPath = nextSection;
 	}
@@ -265,7 +390,7 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 	private normalizeSelection(): void {
 		const { vault } = this.app;
 		const notebook = getFolder(vault, this.selection.notebookPath);
-		if (!notebook) {
+		if (!notebook || this.pluginData.hiddenNotebooks.includes(notebook.path)) {
 			this.selection = { notebookPath: null, sectionPath: null };
 			return;
 		}
@@ -287,6 +412,8 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 			'--onb-tree-font-size': `${notebookFontSize}px`,
 			'--onb-notes-font-size': `${noteFontSize}px`,
 		});
+		this.applyLayout();
+		this.normalizeFocus();
 		this.normalizeSelection();
 		this.tree.render();
 		this.justOpened = null;

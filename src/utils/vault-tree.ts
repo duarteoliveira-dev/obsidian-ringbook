@@ -15,6 +15,16 @@ export function getNotebooks(vault: Vault): TFolder[] {
 	return vault.getRoot().children.filter((c) => c instanceof TFolder);
 }
 
+export function getOpenNotebooks(vault: Vault, hidden: string[]): TFolder[] {
+	return getNotebooks(vault).filter((n) => !hidden.includes(n.path));
+}
+
+export function getClosedNotebooks(vault: Vault, hidden: string[]): TFolder[] {
+	return getNotebooks(vault)
+		.filter((n) => hidden.includes(n.path))
+		.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
+
 export function getSections(notebook: TFolder): TFolder[] {
 	return notebook.children.filter((c) => c instanceof TFolder);
 }

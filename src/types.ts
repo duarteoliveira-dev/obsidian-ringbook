@@ -15,6 +15,9 @@ export interface PluginData {
 	lastNotebookPath: string | null;
 	lastSectionPath: string | null;
 	treeWidth: number | null;
+	treeHeight: number | null;
+	hiddenNotebooks: string[];
+	focusPath: string | null;
 }
 
 export interface Selection {
@@ -34,10 +37,20 @@ export interface ExplorerHost {
 	expanded: Set<string>;
 	justOpened: string | null;
 	closing: Set<string>;
+	searchQuery: string;
+	setSearchQuery(query: string): void;
+	collapsedSections: Set<string>;
 	actions: FileActions;
 	selectNotebook(notebook: Notebook): void;
 	selectSection(notebook: Notebook, section: SectionRef): void;
 	toggleNotebook(notebook: Notebook): void;
+	closeNotebook(notebook: Notebook): void;
+	setFocus(folder: TFolder): void;
+	toggleFocus(): void;
+	collapseAll(): void;
+	clearFocus(): void;
+	reopenNotebook(notebook: Notebook): void;
+	toggleSection(notebook: Notebook, section: Section): void;
 	persist(): Promise<void>;
 	refresh(): void;
 }

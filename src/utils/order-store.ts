@@ -70,6 +70,19 @@ export function registerOrderMigration(
 				oldPath,
 				file.path,
 			);
+			const { focusPath } = plugin.pluginData;
+			if (focusPath) plugin.pluginData.focusPath = remapPath(focusPath, oldPath, file.path);
+			plugin.pluginData.hiddenNotebooks = plugin.pluginData.hiddenNotebooks.map((p) =>
+				remapPath(p, oldPath, file.path),
+			);
+			void plugin.savePluginData();
+		}),
+	);
+	plugin.registerEvent(
+		plugin.app.vault.on('delete', (file) => {
+			const { hiddenNotebooks } = plugin.pluginData;
+			if (!hiddenNotebooks.includes(file.path)) return;
+			plugin.pluginData.hiddenNotebooks = hiddenNotebooks.filter((p) => p !== file.path);
 			void plugin.savePluginData();
 		}),
 	);

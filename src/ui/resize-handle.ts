@@ -1,15 +1,19 @@
-const MIN_WIDTH = 100;
+const MIN_SIZE = 100;
 
 export function attachResizer(
 	handle: HTMLElement,
 	container: HTMLElement,
-	onResize: (width: number) => void,
-	onDone: (width: number) => void,
+	isVertical: () => boolean,
+	onResize: (size: number) => void,
+	onDone: (size: number) => void,
 ): void {
-	const widthFor = (evt: PointerEvent) => {
+	const sizeFor = (evt: PointerEvent) => {
 		const rect = container.getBoundingClientRect();
-		const max = Math.max(MIN_WIDTH, rect.width - MIN_WIDTH);
-		return Math.round(Math.min(max, Math.max(MIN_WIDTH, evt.clientX - rect.left)));
+		const stacked = isVertical();
+		const total = stacked ? rect.height : rect.width;
+		const pos = stacked ? evt.clientY - rect.top : evt.clientX - rect.left;
+		const max = Math.max(MIN_SIZE, total - MIN_SIZE);
+		return Math.round(Math.min(max, Math.max(MIN_SIZE, pos)));
 	};
 
 	handle.addEventListener('pointerdown', (evt) => {
@@ -18,12 +22,12 @@ export function attachResizer(
 		handle.addClass('is-resizing');
 	});
 	handle.addEventListener('pointermove', (evt) => {
-		if (handle.hasPointerCapture(evt.pointerId)) onResize(widthFor(evt));
+		if (handle.hasPointerCapture(evt.pointerId)) onResize(sizeFor(evt));
 	});
 	handle.addEventListener('pointerup', (evt) => {
 		if (!handle.hasPointerCapture(evt.pointerId)) return;
 		handle.releasePointerCapture(evt.pointerId);
 		handle.removeClass('is-resizing');
-		onDone(widthFor(evt));
+		onDone(sizeFor(evt));
 	});
 }

@@ -1,4 +1,6 @@
 import { Plugin } from 'obsidian';
+import { registerToggleFocusCommand } from './commands/toggle-focus';
+import { registerReopenNotebookCommand } from './commands/reopen-notebook';
 import { revealNotebookExplorer } from './commands/reveal-view';
 import {
 	DEFAULT_DATA,
@@ -36,6 +38,8 @@ export default class RingbookPlugin extends Plugin {
 			name: 'Open notebook explorer',
 			callback: () => void revealNotebookExplorer(this),
 		});
+		registerReopenNotebookCommand(this);
+		registerToggleFocusCommand(this);
 		this.addSettingTab(new RingbookSettingTab(this.app, this));
 	}
 
@@ -51,10 +55,13 @@ export default class RingbookPlugin extends Plugin {
 			...saved,
 			settings: { ...DEFAULT_SETTINGS, ...inheritedNotebookColor, ...savedSettings },
 			order: saved?.order ?? {},
+			hiddenNotebooks: [...(saved?.hiddenNotebooks ?? [])],
+			focusPath: null,
 		};
 	}
 
 	async savePluginData() {
-		await this.saveData(this.pluginData);
+		// Focus is session-only, so it is never written to disk.
+		await this.saveData({ ...this.pluginData, focusPath: null });
 	}
 }

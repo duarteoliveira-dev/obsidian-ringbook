@@ -1,12 +1,26 @@
 import { Menu, TFile, TFolder } from 'obsidian';
 import { NO_SECTION } from '../types';
 import type { ExplorerHost } from '../types';
-import { getFolder, getNotebooks, getSections } from '../utils/vault-tree';
+import { getFolder, getOpenNotebooks, getSections } from '../utils/vault-tree';
+
+function addFocusItem(menu: Menu, host: ExplorerHost, folder: TFolder): void {
+	const focused = host.pluginData.focusPath === folder.path;
+	menu.addItem((i) =>
+		i
+			.setTitle(focused ? 'Exit focus' : 'Focus')
+			.setIcon('focus')
+			.onClick(() => (focused ? host.clearFocus() : host.setFocus(folder))),
+	);
+}
 
 export function showNotebookMenu(host: ExplorerHost, notebook: TFolder, evt: MouseEvent): void {
 	const menu = new Menu();
 	menu.addItem((i) =>
 		i.setTitle('New section').setIcon('folder-plus').onClick(() => host.actions.newSection(notebook)),
+	);
+	addFocusItem(menu, host, notebook);
+	menu.addItem((i) =>
+		i.setTitle('Close notebook').setIcon('eye-off').onClick(() => host.closeNotebook(notebook)),
 	);
 	menu.addSeparator();
 	menu.addItem((i) =>
@@ -42,6 +56,17 @@ export function showSectionMenu(
 				.onClick(() => actions.newSection(notebook, section)),
 		);
 	}
+	menu.addItem((i) =>
+		i
+			.setSection('action-primary')
+			.setTitle(host.pluginData.focusPath === section.path ? 'Exit focus' : 'Focus')
+			.setIcon('focus')
+			.onClick(() =>
+				host.pluginData.focusPath === section.path
+					? host.clearFocus()
+					: host.setFocus(section),
+			),
+	);
 	menu.addItem((i) =>
 		i
 			.setSection('danger')
@@ -101,7 +126,7 @@ export function showNoteMenu(host: ExplorerHost, note: TFile, evt: MouseEvent): 
 		i.setTitle('Rename').setIcon('pencil').onClick(() => host.actions.rename(note)),
 	);
 	menu.addSeparator();
-	for (const notebook of getNotebooks(host.app.vault)) {
+	for (const notebook of getOpenNotebooks(host.app.vault, host.pluginData.hiddenNotebooks)) {
 		for (const section of getSections(notebook)) {
 			if (section === note.parent) continue;
 			menu.addItem((i) =>
