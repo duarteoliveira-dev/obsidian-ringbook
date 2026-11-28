@@ -8,7 +8,6 @@ export type NoteSortOrder = 'alphabetical' | 'modified-desc';
 export type PanelLayout = 'side-by-side' | 'stacked';
 
 export interface RingbookSettings {
-	showNotesRecursively: boolean;
 	noteSortOrder: NoteSortOrder;
 	panelLayout: PanelLayout;
 	firstNotebookColor: string;
@@ -28,7 +27,6 @@ interface VaultConfigAccess {
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 export const DEFAULT_SETTINGS: RingbookSettings = {
-	showNotesRecursively: true,
 	noteSortOrder: 'alphabetical',
 	panelLayout: 'side-by-side',
 	firstNotebookColor: '#ffffff',
@@ -121,11 +119,6 @@ export class RingbookSettingTab extends PluginSettingTab {
 				type: 'group',
 				heading: 'Notes',
 				items: [
-					{
-						name: 'Include nested folders',
-						desc: 'Show notes from folders nested inside a section. When off, only files directly in the section are listed.',
-						control: { type: 'toggle', key: 'showNotesRecursively' },
-					},
 					{
 						name: 'Default note order',
 						desc: 'Used for notes that have not been reordered by dragging.',

@@ -22,13 +22,13 @@ export class NoteListRenderer {
 			sectionPath && sectionPath !== NO_SECTION ? getFolder(app.vault, sectionPath) : null;
 		const valid = notebook && sectionPath && (sectionPath === NO_SECTION || sectionFolder);
 
-		const header = this.el.createDiv({ cls: 'onb-col-header' });
-		const title = !valid
-			? 'Notes'
-			: sectionPath === NO_SECTION
-				? '(No section)'
-				: (sectionFolder?.name ?? 'Notes');
-		header.createSpan({ cls: 'onb-col-title', text: title });
+		if (valid) {
+			const header = this.el.createDiv({ cls: 'onb-col-header' });
+			const add = header.createEl('button', { cls: 'onb-add-note' });
+			setIcon(add.createSpan({ cls: 'onb-add-note-icon' }), 'plus');
+			add.createSpan({ text: 'Add note' });
+			add.addEventListener('click', () => actions.newNote(notebook, sectionPath));
+		}
 
 		const list = this.el.createDiv({ cls: 'onb-list' });
 		if (!valid) {
@@ -36,12 +36,6 @@ export class NoteListRenderer {
 			return;
 		}
 
-		const add = header.createSpan({
-			cls: 'clickable-icon',
-			attr: { 'aria-label': 'New note' },
-		});
-		setIcon(add, 'plus');
-		add.addEventListener('click', () => actions.newNote(notebook, sectionPath));
 		list.addEventListener('contextmenu', (evt) => {
 			if (evt.target instanceof Element && evt.target.closest('.onb-row')) return;
 			evt.preventDefault();
@@ -51,7 +45,7 @@ export class NoteListRenderer {
 		const { settings, order } = pluginData;
 		const key = notesOrderKey(notebook, sectionPath);
 		const notes = sortItems(
-			getNotes(notebook, sectionFolder ?? NO_SECTION, settings.showNotesRecursively),
+			getNotes(notebook, sectionFolder ?? NO_SECTION),
 			key,
 			order,
 			settings.noteSortOrder,

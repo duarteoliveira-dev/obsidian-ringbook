@@ -2,6 +2,26 @@
 
 All notable changes to Ringbook are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-28
+
+Requires Obsidian 1.13.0 or later.
+
+### Added
+
+- Selecting a section or folder opens a note from it in the current tab: the last note you opened there, or the first note of the list. Nothing opens if the folder has no notes.
+- **Add note** button at the top of the note list.
+- A line separates the notebooks in the notebooks panel.
+
+### Changed
+
+- The note list shows only the notes directly inside the selected folder, not the notes of its subfolders.
+- The note list has more space between the note names and the left edge.
+- The note list header no longer shows the section name.
+
+### Removed
+
+- The **Include nested folders** setting, since the note list never includes subfolders now.
+
 ## [1.0.1] - 2026-11-24
 
 Requires Obsidian 1.13.0 or later.

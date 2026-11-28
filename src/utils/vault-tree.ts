@@ -40,15 +40,8 @@ export function getLooseFiles(notebook: TFolder): TFile[] {
 export function getNotes(
 	notebook: TFolder,
 	section: TFolder | typeof NO_SECTION,
-	recursive: boolean,
 ): TFile[] {
-	if (section === NO_SECTION) return getLooseFiles(notebook);
-	if (!recursive) return getLooseFiles(section);
-	const notes: TFile[] = [];
-	Vault.recurseChildren(section, (f) => {
-		if (f instanceof TFile) notes.push(f);
-	});
-	return notes;
+	return getLooseFiles(section === NO_SECTION ? notebook : section);
 }
 
 export function notesOrderKey(notebook: TFolder, sectionPath: string): string {

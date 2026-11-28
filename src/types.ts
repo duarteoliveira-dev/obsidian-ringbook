@@ -42,7 +42,7 @@ export interface ExplorerHost {
 	collapsedSections: Set<string>;
 	actions: FileActions;
 	selectNotebook(notebook: Notebook): void;
-	selectSection(notebook: Notebook, section: SectionRef): void;
+	selectSection(notebook: Notebook, section: SectionRef, openNote?: boolean): void;
 	toggleNotebook(notebook: Notebook): void;
 	closeNotebook(notebook: Notebook): void;
 	setFocus(folder: TFolder): void;

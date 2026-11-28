@@ -6,7 +6,7 @@ import { VIEW_TYPE_NOTEBOOK_EXPLORER, RIBBON_ICON } from '../utils/constants';
 import { FileActions } from '../utils/file-actions';
 import { remapPath, sortItems } from '../utils/order-store';
 import { createScheduler } from '../utils/refresh-scheduler';
-import { getFolder, getLooseFiles, getNotebooks, getSections } from '../utils/vault-tree';
+import { getFolder, getLooseFiles, getNotebooks, getNotes, getSections, notesOrderKey } from '../utils/vault-tree';
 import { NoteListRenderer } from './note-list-renderer';
 import { attachResizer } from './resize-handle';
 import { TreeRenderer } from './tree-renderer';
@@ -23,6 +23,7 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 	private tree!: TreeRenderer;
 	private notes!: NoteListRenderer;
 	private closed = false;
+	private lastNoteByFolder = new Map<string, string>();
 	private schedule = createScheduler(() => {
 		if (!this.closed) this.render();
 	});
@@ -112,6 +113,7 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		);
 		this.registerEvent(
 			workspace.on('file-open', (file) => {
+				if (file?.parent) this.lastNoteByFolder.set(file.parent.path, file.path);
 				if (file && this.pluginData.settings.autoRevealNote) this.revealNote(file);
 				else this.schedule();
 			}),
@@ -143,7 +145,7 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		this.commitSelection();
 	}
 
-	selectSection(notebook: Notebook, section: SectionRef): void {
+	selectSection(notebook: Notebook, section: SectionRef, openNote = false): void {
 		this.expand(notebook);
 		if (section !== NO_SECTION && section.parent && section.parent !== notebook) {
 			this.collapsedSections.delete(section.parent.path);
@@ -153,6 +155,22 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 			sectionPath: section === NO_SECTION ? NO_SECTION : section.path,
 		};
 		this.commitSelection();
+		if (openNote) void this.openSectionNote(notebook, section);
+	}
+
+	private async openSectionNote(notebook: Notebook, section: SectionRef): Promise<void> {
+		const folder = section === NO_SECTION ? notebook : section;
+		const active = this.app.workspace.getActiveFile();
+		if (active?.parent === folder) return;
+		const last = this.lastNoteByFolder.get(folder.path);
+		const remembered = last ? this.app.vault.getFileByPath(last) : null;
+		let target = remembered?.parent === folder ? remembered : null;
+		if (!target) {
+			const { order, settings } = this.pluginData;
+			const key = notesOrderKey(notebook, section === NO_SECTION ? NO_SECTION : section.path);
+			target = sortItems(getNotes(notebook, section), key, order, settings.noteSortOrder)[0] ?? null;
+		}
+		if (target) await this.app.workspace.getLeaf(false).openFile(target);
 	}
 
 	revealActiveNote(): void {
@@ -277,12 +295,12 @@ export class NotebookExplorerView extends ItemView implements ExplorerHost {
 		if (this.collapsedSections.has(section.path)) {
 			this.collapsedSections.delete(section.path);
 			this.justOpened = section.path;
-			this.selectSection(notebook, section);
+			this.selectSection(notebook, section, true);
 			return;
 		}
 		this.collapseWrapper('onb-subsections', section.path, () => {
 			this.collapsedSections.add(section.path);
-			this.selectSection(notebook, section);
+			this.selectSection(notebook, section, true);
 		});
 	}
 

@@ -291,7 +291,7 @@ export class TreeRenderer {
 			selection.notebookPath === notebook.path && selection.sectionPath === NO_SECTION,
 		);
 		row.createSpan({ cls: 'onb-row-title', text: '(No section)' });
-		row.addEventListener('click', () => this.host.selectSection(notebook, NO_SECTION));
+		row.addEventListener('click', () => this.host.selectSection(notebook, NO_SECTION, true));
 		row.addEventListener('contextmenu', (evt) => {
 			evt.preventDefault();
 			showNoSectionMenu(this.host, notebook, evt);
@@ -338,7 +338,7 @@ export class TreeRenderer {
 
 		row.addEventListener('click', () => {
 			if (subs.length > 0 && !searching) this.host.toggleSection(notebook, section);
-			else this.host.selectSection(notebook, section);
+			else this.host.selectSection(notebook, section, true);
 		});
 		row.addEventListener('contextmenu', (evt) => {
 			evt.preventDefault();

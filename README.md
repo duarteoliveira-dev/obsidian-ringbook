@@ -189,15 +189,6 @@ The color of the marker on the first section of each notebook. The other section
 
 ### Notes
 
-#### Include nested folders
-
-Controls which notes a section lists.
-
-- **On:** notes from every folder nested inside the section are listed too, in one flat list.
-- **Off:** only the files directly inside the section are listed.
-
-Default: on.
-
 #### Default note order
 
 How notes are sorted when they have not been reordered by dragging.
