@@ -9,7 +9,7 @@ Requires Obsidian 1.13.0 or later.
 ### Added
 
 - Selecting a section or folder opens a note from it in the current tab: the last note you opened there, or the first note of the list. Nothing opens if the folder has no notes.
-- **Add note** button at the top of the note list.
+- Compact **Add note** button at the top of the note list.
 - A line separates the notebooks in the notebooks panel.
 
 ### Changed
