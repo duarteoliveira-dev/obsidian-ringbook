@@ -185,7 +185,7 @@ This option is greyed out when **Color notebook icons** is off.
 
 #### First section color
 
-The color of the marker on the first section of each notebook. The other sections of the same notebook get colors derived from it in the same way as for notebooks. Default: white.
+The color of the marker on the first section of each notebook. The other sections of the same notebook get colors derived from it in the same way as for notebooks. Default: red (#d74242), the first color of the palette.
 
 ### Notes
 

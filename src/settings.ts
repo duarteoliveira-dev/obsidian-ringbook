@@ -30,7 +30,7 @@ export const DEFAULT_SETTINGS: RingbookSettings = {
 	noteSortOrder: 'alphabetical',
 	panelLayout: 'side-by-side',
 	firstNotebookColor: '#ffffff',
-	firstSectionColor: '#ffffff',
+	firstSectionColor: '#d74242',
 	autoRevealNote: false,
 	autoCloseNotebooks: false,
 	colorNotebookIcons: true,
