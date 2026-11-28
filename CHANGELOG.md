@@ -2,6 +2,14 @@
 
 All notable changes to Ringbook are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-11-28
+
+Requires Obsidian 1.13.0 or later.
+
+### Changed
+
+- Republished 1.1.0 as 1.1.1. There are no functional changes.
+
 ## [1.1.0] - 2026-11-28
 
 Requires Obsidian 1.13.0 or later.
