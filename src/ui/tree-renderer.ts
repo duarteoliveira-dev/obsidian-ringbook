@@ -115,7 +115,7 @@ export class TreeRenderer {
 		const wrap = this.el.createDiv({ cls: 'onb-search search-input-container' });
 		const input = wrap.createEl('input', {
 			type: 'search',
-			attr: { placeholder: 'Search notebooks...', spellcheck: 'false' },
+			attr: { placeholder: 'Search ringbooks...', spellcheck: 'false' },
 		});
 		const clear = wrap.createDiv({
 			cls: 'search-input-clear-button',

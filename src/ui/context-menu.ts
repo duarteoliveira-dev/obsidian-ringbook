@@ -1,7 +1,7 @@
 import { Menu, TFile, TFolder } from 'obsidian';
 import { NO_SECTION } from '../types';
 import type { ExplorerHost } from '../types';
-import { getFolder, getOpenNotebooks, getSections } from '../utils/vault-tree';
+import { getFolder } from '../utils/vault-tree';
 
 function addFocusItem(menu: Menu, host: ExplorerHost, folder: TFolder): void {
 	const focused = host.pluginData.focusPath === folder.path;
@@ -121,25 +121,51 @@ export function showNotesAreaMenu(
 }
 
 export function showNoteMenu(host: ExplorerHost, note: TFile, evt: MouseEvent): void {
+	const { app, actions } = host;
 	const menu = new Menu();
 	menu.addItem((i) =>
-		i.setTitle('Rename').setIcon('pencil').onClick(() => host.actions.rename(note)),
+		i
+			.setSection('open')
+			.setTitle('Open in new tab')
+			.setIcon('lucide-file-plus')
+			.onClick(() => void app.workspace.getLeaf('tab').openFile(note)),
 	);
-	menu.addSeparator();
-	for (const notebook of getOpenNotebooks(host.app.vault, host.pluginData.hiddenNotebooks)) {
-		for (const section of getSections(notebook)) {
-			if (section === note.parent) continue;
-			menu.addItem((i) =>
-				i
-					.setTitle(`Move to: ${notebook.name} / ${section.name}`)
-					.setIcon('folder-input')
-					.onClick(() => void host.actions.moveInto(note, section)),
-			);
-		}
-	}
-	menu.addSeparator();
 	menu.addItem((i) =>
-		i.setTitle('Delete').setIcon('trash').onClick(() => host.actions.remove(note)),
+		i
+			.setSection('open')
+			.setTitle('Open to the right')
+			.setIcon('lucide-separator-vertical')
+			.onClick(() => void app.workspace.getLeaf('split', 'vertical').openFile(note)),
 	);
+	menu.addItem((i) =>
+		i
+			.setSection('open')
+			.setTitle('Open in new window')
+			.setIcon('lucide-picture-in-picture-2')
+			.onClick(() => void app.workspace.getLeaf('window').openFile(note)),
+	);
+	menu.addItem((i) =>
+		i
+			.setSection('action')
+			.setTitle('Make a copy')
+			.setIcon('lucide-files')
+			.onClick(() => void actions.copy(note)),
+	);
+	menu.addItem((i) =>
+		i
+			.setSection('danger')
+			.setTitle('Rename...')
+			.setIcon('lucide-edit-3')
+			.onClick(() => actions.rename(note)),
+	);
+	menu.addItem((i) =>
+		i
+			.setSection('danger')
+			.setTitle('Delete')
+			.setIcon('lucide-trash-2')
+			.setWarning(true)
+			.onClick(() => void app.fileManager.promptForDeletion(note)),
+	);
+	app.workspace.trigger('file-menu', menu, note, 'file-explorer-context-menu');
 	menu.showAtMouseEvent(evt);
 }
